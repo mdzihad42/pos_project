@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}Invoice #{{ sale.id }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-8">
+        <div class="card p-5" id="printableInvoice">
+            <div class="d-flex justify-content-between align-items-start mb-5">
+                <div>
+                    <h2 class="fw-bold mb-0 text-primary">SmartPOS</h2>
+                    <p class="text-muted mb-0">123 Market Street, Dhaka<br>Tel: +880 123456789</p>
+                </div>
+                <div class="text-end">
+                    <h4 class="mb-0">INVOICE</h4>
+                    <p class="text-muted mb-0">Invoice #{{ sale.id }}<br>Date: {{ sale.sale_date|date:"M d, Y H:i" }}</p>
+                </div>
+            </div>
+
+            <div class="row mb-5">
+                <div class="col-md-6">
+                    <h6 class="fw-bold text-muted small mb-1">CUSTOMER INFO</h6>
+                    <p class="mb-0 fw-bold">{{ sale.customer.name|default:"Guest Customer" }}</p>
+                    <p class="text-muted small mb-0">{{ sale.customer.phone|default:"" }}<br>{{ sale.customer.address|default:"" }}</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <h6 class="fw-bold text-muted small mb-1">CASHIER INFO</h6>
+                    <p class="mb-0 fw-bold">{{ sale.cashier.username }}</p>
+                    <p class="text-muted small mb-0">{{ sale.payment_method }}</p>
+                </div>
+            </div>
+
+            <div class="table-responsive mb-5">
+                <table class="table table-borderless">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="py-3 px-4">ITEM DESCRIPTION</th>
+                            <th class="py-3 px-4 text-center">QTY</th>
+                            <th class="py-3 px-4 text-end">UNIT PRICE</th>
+                            <th class="py-3 px-4 text-end">TOTAL</th>
+                            <th class="py-3 px-4 text-end no-print">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in sale.items.all %}
+                        <tr class="border-bottom {% if item.return_record %}bg-light opacity-50{% endif %}">
+                            <td class="py-3 px-4">
+                                {{ item.product.name }}
+                                {% if item.return_record %}
+                                <span class="badge bg-danger rounded-pill ms-2">Returned</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 px-4 text-center">{{ item.quantity }}</td>
+                            <td class="py-3 px-4 text-end">${{ item.unit_price|floatformat:2 }}</td>
+                            <td class="py-3 px-4 text-end fw-bold">${{ item.total_price|floatformat:2 }}</td>
+                            <td class="py-3 px-4 text-end no-print">
+                                {% if not item.return_record %}
+                                <a href="{% url 'return_item' item.id %}" class="btn btn-sm btn-outline-danger px-3 rounded-pill" onclick="return confirm('Return this item?')">Return</a>
+                                {% else %}
+                                <span class="text-muted small">Processed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="row justify-content-end">
+                <div class="col-md-5">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Subtotal:</span>
+                        <span class="fw-bold">${{ sale.subtotal|floatformat:2 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">VAT (5%):</span>
+                        <span class="fw-bold">${{ sale.tax|floatformat:2 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
+                        <span class="text-muted">Discount:</span>
+                        <span class="text-danger fw-bold">-${{ sale.discount|floatformat:2 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <h4 class="fw-bold">GRAND TOTAL:</h4>
+                        <h4 class="fw-bold text-primary">${{ sale.total_price|floatformat:2 }}</h4>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-5 pt-5 text-center border-top text-muted small">
+                <p>Thank you for shopping with us! This is a system-generated invoice.</p>
+                <div class="d-flex justify-content-center gap-2 no-print">
+                    <button onclick="window.print()" class="btn btn-primary px-4 rounded-pill">
+                        <i class="fas fa-print me-2"></i> Print Invoice
+                    </button>
+                    <a href="{% url 'pos' %}" class="btn btn-outline-secondary px-4 rounded-pill">
+                        <i class="fas fa-plus me-2"></i> New Sale
+                    </a>
+                    <a href="{% url 'dashboard' %}" class="btn btn-light px-4 rounded-pill">
+                        <i class="fas fa-home me-2"></i> Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        header, footer, nav, .sidebar, .no-print {
+            display: none !important;
+        }
+        .main-content {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+    }
+</style>
+{% endblock %}

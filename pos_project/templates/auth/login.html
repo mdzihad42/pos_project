@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}SmartPOS - Login{% endblock %}
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="col-md-4">
+        <div class="card p-4">
+            <h2 class="text-center mb-4">SmartPOS Login</h2>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" name="username" class="form-control" placeholder="Enter username" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" placeholder="Enter password" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Login</button>
+            </form>
+            <div class="text-center mt-3">
+                <p>New user? <a href="{% url 'register' %}">Create account</a></p>
+                <div class="alert alert-info py-1 px-2 mb-0 mt-2 small">
+                    Demo Credentials:<br>
+                    Admin: admin/admin123<br>
+                    (Must be created via admin interface first)
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}SmartPOS - Product Management{% endblock %}
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-6">
+        <h3 class="fw-bold mb-0">Products ({{ products|length }})</h3>
+    </div>
+    <div class="col-6 text-end">
+        <div class="d-flex align-items-center justify-content-end">
+            <a href="{% url 'import_products_csv' %}" class="btn btn-outline-primary rounded-pill me-2"><i class="fas fa-file-import me-1"></i> Import CSV</a>
+            <a href="{% url 'product_add' %}" class="btn btn-primary rounded-pill"><i class="fas fa-plus me-1"></i> Add Product</a>
+        </div>
+    </div>
+</div>
+
+<div class="card p-3 shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="bg-light">
+                <tr class="small text-muted text-uppercase">
+                    <th class="px-3">Image</th>
+                    <th>Product Name</th>
+                    <th>Category</th>
+                    <th>Price ($)</th>
+                    <th class="text-center">Stock</th>
+                    <th>Barcode</th>
+                    <th class="text-end px-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td class="px-3">
+                        <img src="{% if product.image %}{{ product.image.url }}{% else %}/static/img/no-image.png{% endif %}" height="40" width="40" class="rounded object-fit-cover">
+                    </td>
+                    <td>
+                        <div class="fw-bold">{{ product.name }}</div>
+                        <small class="text-muted">ID: #{{ product.id }}</small>
+                    </td>
+                    <td><span class="badge bg-light text-dark px-3 py-2 rounded-pill">{{ product.category.name }}</span></td>
+                    <td class="fw-bold text-primary">${{ product.price|floatformat:2 }}</td>
+                    <td class="text-center">
+                        <span class="badge {% if product.stock > 10 %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} border px-3 py-2 rounded-pill">
+                            {{ product.stock }} units
+                        </span>
+                    </td>
+                    <td><code class="text-muted">{{ product.barcode|default:"N/A" }}</code></td>
+                    <td class="text-end px-3">
+                        <div class="btn-group">
+                            <a href="{% url 'product_edit' product.id %}" class="btn btn-sm btn-outline-secondary rounded-start px-3"><i class="fas fa-edit"></i></a>
+                            <a href="{% url 'product_delete' product.id %}" class="btn btn-sm btn-outline-danger rounded-end px-3" onclick="return confirm('Are you sure?')"><i class="fas fa-trash-alt"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center py-5 text-muted">No products available. <a href="{% url 'product_add' %}">Add your first product!</a></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

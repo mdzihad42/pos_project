@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}SmartPOS - Purchase History{% endblock %}
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-8">
+        <h3 class="fw-bold mb-0">Full Purchase History (Restocks)</h3>
+    </div>
+    <div class="col-4 text-end">
+        <a href="{% url 'purchase_create' %}" class="btn btn-primary rounded-pill shadow-sm px-4">
+            <i class="fas fa-file-invoice-dollar me-2"></i> Record New Purchase
+        </a>
+    </div>
+</div>
+
+<div class="card p-3 shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="bg-light">
+                <tr class="small text-muted text-uppercase">
+                    <th class="px-3">Date</th>
+                    <th>Product</th>
+                    <th>Supplier</th>
+                    <th class="text-center">Qty</th>
+                    <th class="text-end">Cost Total ($)</th>
+                    <th class="text-end px-3">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for purchase in purchases %}
+                <tr>
+                    <td class="px-3 font-monospace small"><i class="fas fa-calendar-alt text-muted me-2"></i> {{ purchase.purchase_date|date:"d M Y, H:i" }}</td>
+                    <td>
+                        <div class="fw-bold">{{ purchase.product.name }}</div>
+                        <small class="text-muted">BC: {{ purchase.product.barcode|default:"No BC" }}</small>
+                    </td>
+                    <td><span class="badge bg-light text-dark fw-bold px-3 py-2 rounded-pill">{{ purchase.supplier.name }}</span></td>
+                    <td class="text-center"><span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill">+{{ purchase.quantity }} units</span></td>
+                    <td class="text-end fw-bold text-primary">${{ purchase.total_cost|floatformat:2 }}</td>
+                    <td class="text-end px-3"><span class="badge bg-info-subtle text-info px-3 py-2 border rounded-pill small">Stock Added</span></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center py-5">No purchase history yet. <a href="{% url 'purchase_create' %}">Record your first restock!</a></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

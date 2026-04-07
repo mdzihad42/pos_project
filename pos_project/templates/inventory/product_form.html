@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}SmartPOS - Edit Product{% endblock %}
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-6 col-lg-5">
+        <div class="card p-4 shadow-lg border-0 rounded-4">
+            <h3 class="fw-bold mb-4 d-flex align-items-center">
+                <a href="{% url 'product_list' %}" class="btn btn-sm btn-light rounded-circle me-3"><i class="fas fa-arrow-left"></i></a>
+                {% if product %}Edit Product{% else %}Add New Product{% endif %}
+            </h3>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Product Name</label>
+                    <input type="text" name="name" class="form-control rounded-pill border-0 shadow-sm px-4" value="{{ product.name|default:'' }}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Category</label>
+                    <select name="category" class="form-select rounded-pill border-0 shadow-sm px-4" required>
+                        <option value="">Select Category</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if product.category.id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="row g-3">
+                    <div class="col-6 mb-3">
+                        <label class="form-label small fw-bold">Price ($)</label>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text rounded-start-pill border-0 shadow-sm bg-primary text-white px-3">$</span>
+                            <input type="number" name="price" class="form-control rounded-end-pill border-0 shadow-sm px-4" step="0.01" value="{{ product.price|default:'0.00' }}" required>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <label class="form-label small fw-bold">Stock Quantity</label>
+                        <input type="number" name="stock" class="form-control rounded-pill border-0 shadow-sm px-4" value="{{ product.stock|default:'0' }}" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Barcode</label>
+                    <input type="text" name="barcode" class="form-control rounded-pill border-0 shadow-sm px-4" value="{{ product.barcode|default:'' }}">
+                </div>
+                <div class="mb-4">
+                    <label class="form-label small fw-bold">Product Image</label>
+                    <input type="file" name="image" class="form-control rounded-pill border-0 shadow-sm px-4">
+                    {% if product.image %}
+                    <small class="text-muted d-block mt-2">Current image: {{ product.image.name }}</small>
+                    {% endif %}
+                </div>
+                <button type="submit" class="btn btn-primary w-100 rounded-pill py-3 fw-bold shadow-lg mt-3">
+                    <i class="fas fa-save me-2"></i> {% if product %}Update Product{% else %}Add Product Now{% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

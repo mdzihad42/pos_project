@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% block title %}SmartPOS Dashboard{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-3 mb-4">
+        <div class="card bg-primary text-white p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0">{{ total_sales_today|default:0 }}</h2>
+                    <p class="mb-0">Sales Today</p>
+                </div>
+                <i class="fas fa-dollar-sign fa-3x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card bg-success text-white p-3 h-100 shadow">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0">${{ total_profit_today|floatformat:2 }}</h2>
+                    <p class="mb-0">Net Profit Today</p>
+                </div>
+                <i class="fas fa-hand-holding-usd fa-3x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card bg-info text-white p-3 h-100 shadow">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0">{{ total_sales_count }}</h2>
+                    <p class="mb-0">Sales Total</p>
+                </div>
+                <i class="fas fa-shopping-basket fa-3x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card bg-danger text-white p-3 h-100 shadow">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0">${{ total_expenses_today|floatformat:2 }}</h2>
+                    <p class="mb-0">Expenses Today</p>
+                </div>
+                <i class="fas fa-file-invoice-dollar fa-3x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card bg-dark text-white p-3 h-100 shadow border-start border-4 border-warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0 text-warning">${{ net_cash|floatformat:2 }}</h2>
+                    <p class="mb-0">Net Cash Today</p>
+                </div>
+                <i class="fas fa-wallet fa-3x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="card bg-warning text-dark p-3 h-100 border-0 shadow">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0">{{ low_stock_count }}</h2>
+                    <p class="mb-0">Low Stock items</p>
+                </div>
+                <i class="fas fa-exclamation-triangle fa-3x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-8">
+        <div class="card p-3 mb-4">
+            <h5 class="mb-4 d-flex justify-content-between align-items-center">
+                Sales Trend (Last 7 Days)
+                <a href="{% url 'sales_report' %}" class="btn btn-sm btn-outline-primary">Details</a>
+            </h5>
+            <canvas id="salesChart" height="150"></canvas>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-3 mb-4 h-100">
+            <h5 class="mb-4">Top Selling Products</h5>
+            <div class="table-responsive">
+                <table class="table table-hover table-sm">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Qty</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in top_selling %}
+                        <tr>
+                            <td>{{ item.product__name }}</td>
+                            <td>{{ item.total_qty }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="2" class="text-center">No data yet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card p-3">
+            <h5 class="mb-4 text-warning"><i class="fas fa-exclamation-circle"></i> Critical Low Stock (<= 10)</h5>
+            <div class="table-responsive">
+                <table class="table table-hover table-sm">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Stock</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in low_stock_products %}
+                        <tr>
+                            <td>{{ product.name }}</td>
+                            <td>{{ product.category.name }}</td>
+                            <td class="text-danger fw-bold">{{ product.stock }}</td>
+                            <td><a href="{% url 'purchase_create' %}?product={{ product.id }}" class="btn btn-sm btn-outline-success">Restock</a></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-success">All products are well stocked!</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    const salesChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [{
+                label: 'Gross Sales ($)',
+                data: {{ chart_data|safe }},
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.05)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 3
+            },
+            {
+                label: 'Net Profit ($)',
+                data: {{ profit_chart_data|safe }},
+                borderColor: '#198754',
+                backgroundColor: 'rgba(25, 135, 84, 0.05)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 3
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    grid: { display: false } 
+                },
+                x: { 
+                    grid: { display: false } 
+                }
+            }
+        }
+    });
+
+</script>
+{% endblock %}

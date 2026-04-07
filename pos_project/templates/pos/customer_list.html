@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}SmartPOS - Customer Management{% endblock %}
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-6">
+        <h3 class="fw-bold mb-0">Customers ({{ customers|length }})</h3>
+    </div>
+    <div class="col-6 text-end">
+        <a href="{% url 'customer_add' %}" class="btn btn-primary rounded-pill shadow-sm px-4">
+            <i class="fas fa-user-plus me-2"></i> Register Customer
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% for customer in customers %}
+    <div class="col-md-4 col-lg-3">
+        <div class="card h-100 p-3 shadow-sm border-0 rounded-4">
+            <div class="d-flex align-items-center mb-3">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold fs-4 me-3" style="width: 50px; height: 50px;">
+                    {{ customer.name|slice:":1"|upper }}
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-0">{{ customer.name }}</h6>
+                    <small class="text-muted"><i class="fas fa-phone-alt me-1"></i> {{ customer.phone }}</small>
+                    <div class="mt-1">
+                        {% if customer.balance > 0 %}
+                        <span class="badge bg-danger rounded-pill px-3 py-1 shadow-sm">Due: ${{ customer.balance }}</span>
+                        {% else %}
+                        <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1">No Dues</span>
+                        {% endif %}
+                        <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1 ms-1"><i class="fas fa-star me-1"></i> {{ customer.loyalty_points }} Points</span>
+                    </div>
+                </div>
+            </div>
+            <p class="text-muted small mb-3"><i class="fas fa-envelope me-1"></i> {{ customer.email|default:"No email recorded" }}</p>
+            <div class="d-flex justify-content-between align-items-center mt-auto mt-2 pt-2 border-top">
+                {% if customer.balance > 0 %}
+                <a href="{% url 'pay_due' customer.id %}" class="btn btn-sm btn-dark px-3 rounded-pill bg-danger shadow-sm"><i class="fas fa-hand-holding-usd me-1"></i> Pay Due</a>
+                {% else %}
+                <a href="{% url 'pos' %}" class="btn btn-sm btn-outline-primary px-3 rounded-pill">New Sale</a>
+                {% endif %}
+                <a href="{% url 'customer_add' %}" class="btn btn-sm btn-light rounded-circle"><i class="fas fa-edit"></i></a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 py-5 text-center text-muted">
+        <i class="fas fa-users-slash fa-4x mb-3 opacity-25"></i>
+        <h5 class="fw-bold">No customers registered yet.</h5>
+        <a href="{% url 'customer_add' %}" class="btn btn-primary rounded-pill mt-3 px-4">Register Your First Customer</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

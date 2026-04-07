@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Shop Expenses{% endblock %}
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-6">
+        <h3 class="fw-bold mb-0">Shop Expenses</h3>
+    </div>
+    <div class="col-6 text-end">
+        <a href="{% url 'expense_add' %}" class="btn btn-danger rounded-pill shadow-sm">
+            <i class="fas fa-plus me-2"></i> Record New Expense
+        </a>
+    </div>
+</div>
+
+<div class="card p-4 shadow-sm border-0 rounded-4">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="bg-light">
+                <tr>
+                    <th>Date</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th class="text-end">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for expense in expenses %}
+                <tr>
+                    <td>{{ expense.date|date:"M d, Y" }}</td>
+                    <td><span class="badge bg-secondary-subtle text-secondary rounded-pill px-3">{{ expense.category.name }}</span></td>
+                    <td>{{ expense.description }}</td>
+                    <td class="text-end fw-bold text-danger">${{ expense.amount }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-center py-4 text-muted">No expenses recorded yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

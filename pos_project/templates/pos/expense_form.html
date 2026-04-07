@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Record Expense{% endblock %}
+{% block content %}
+<div class="row justify-content-center py-5">
+    <div class="col-md-5">
+        <div class="card p-5 shadow-lg border-0 rounded-4">
+            <h3 class="fw-bold mb-4 text-center text-danger"><i class="fas fa-file-invoice-dollar me-2"></i> Record Expense</h3>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Select Category</label>
+                    <select name="category" class="form-select rounded-pill px-4 py-2 border-0 shadow-sm bg-light" required>
+                        <option value="">-- Choose Category --</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Amount ($)</label>
+                    <input type="number" name="amount" class="form-control rounded-pill px-4 py-2 border-0 shadow-sm bg-light" step="0.01" placeholder="0.00" required>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label small fw-bold">Note / Description</label>
+                    <textarea name="description" class="form-control rounded-4 px-4 py-2 border-0 shadow-sm bg-light" rows="3" placeholder="Description of expense..."></textarea>
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-danger rounded-pill py-3 fw-bold shadow-lg">
+                        <i class="fas fa-save me-2"></i> Record Now
+                    </button>
+                    <a href="{% url 'expense_list' %}" class="btn btn-light mt-2 rounded-pill">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

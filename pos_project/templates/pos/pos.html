@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% block title %}SmartPOS - POS System{% endblock %}
+{% block extra_css %}
+<style>
+    .pos-product-card {
+        cursor: pointer;
+        transition: transform 0.2s;
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    }
+    .pos-product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+    }
+    .pos-product-image {
+        height: 120px;
+        object-fit: contain;
+        background: #fdfdfd;
+        border-radius: 12px 12px 0 0;
+    }
+    .cart-container {
+        height: 100vh;
+        position: sticky;
+        top: 0;
+        background: white;
+        border-left: 1px solid #eee;
+    }
+    .cart-item-row {
+        border-bottom: 1px solid #f8f9fa;
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+    }
+    .cart-qty-btn {
+        width: 25px;
+        height: 25px;
+        padding: 0;
+        line-height: normal;
+    }
+    .action-category-btn {
+        margin-right: 10px;
+        margin-bottom: 10px;
+        border-radius: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Main Content (Products) -->
+        <div class="col-md-8 px-4">
+            <div class="d-flex justify-content-between align-items-center my-4">
+                <h3 class="fw-bold mb-0">Products</h3>
+                <form action="{% url 'pos' %}" method="GET" class="d-flex w-50">
+                    <input type="text" name="search" class="form-control me-2 rounded-pill shadow-sm border-0" placeholder="Search by name or barcode (Scan here)..." value="{{ request.GET.search }}" autofocus>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4"><i class="fas fa-search"></i></button>
+                    <a href="{% url 'pos' %}" class="btn btn-outline-secondary rounded-pill ms-2 shadow-sm border-0"><i class="fas fa-sync"></i></a>
+                </form>
+            </div>
+
+            <!-- Categories -->
+            <div class="mb-4">
+                <a href="{% url 'pos' %}" class="btn btn-sm action-category-btn {% if not request.GET.category %}btn-primary shadow{% else %}btn-outline-secondary{% endif %}">
+                    All Categories
+                </a>
+                {% for category in categories %}
+                <a href="{% url 'pos' %}?category={{ category.id }}" class="btn btn-sm action-category-btn {% if request.GET.category == category.id|stringformat:'s' %}btn-primary shadow{% else %}btn-outline-secondary{% endif %}">
+                    {{ category.name }}
+                </a>
+                {% endfor %}
+            </div>
+
+            <!-- Product Grid -->
+            <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4 overflow-auto" style="max-height: 70vh;">
+                {% for product in products %}
+                <div class="col">
+                    <div class="card h-100 pos-product-card shadow-lg p-2 border-0">
+                        <img src="{% if product.image %}{{ product.image.url }}{% else %}/static/img/no-image.png{% endif %}" class="card-img-top pos-product-image" alt="{{ product.name }}">
+                        <div class="card-body p-2 text-center">
+                            <h6 class="card-title fw-bold text-truncate mb-1">{{ product.name }}</h6>
+                            <p class="text-primary fw-bold mb-1">${{ product.price }}</p>
+                            <span class="badge {% if product.stock > 10 %}bg-success{% else %}bg-danger{% endif %} mb-2">Stock: {{ product.stock }}</span>
+                            {% if product.stock > 0 %}
+                                <a href="{% url 'add_to_cart' product.id %}" class="btn btn-sm btn-primary w-100 rounded-pill">
+                                    <i class="fas fa-plus"></i> Add to Cart
+                                </a>
+                            {% else %}
+                                <button class="btn btn-sm btn-secondary w-100 rounded-pill disabled">Out of Stock</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 py-5 text-center">
+                    <img src="/static/img/empty-box.png" width="100" class="opacity-25 mb-3">
+                    <h5 class="text-muted">No products found for your search.</h5>
+                    <p class="text-muted small">Try searching another term or change category.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Sidebar (Cart) -->
+        <div class="col-md-4 p-0 shadow cart-container">
+            <div class="bg-light p-4 h-100 d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="mb-0 fw-bold"><i class="fas fa-shopping-basket text-primary me-2"></i>Cart</h4>
+                    <span class="badge bg-primary rounded-pill px-3 py-2">{{ cart_items|length }} Items</span>
+                </div>
+
+                <div class="flex-grow-1 overflow-auto pe-2" style="max-height: 45vh;">
+                    {% for item in cart_items %}
+                    <div class="cart-item-row">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center mb-1">
+                                <img src="{{ item.image }}" height="40" class="rounded me-2">
+                                <div>
+                                    <h6 class="mb-0 text-truncate" style="max-width: 150px;">{{ item.name }}</h6>
+                                    <small class="text-muted">${{ item.price }} / unit</small>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <span class="fw-bold text-primary">${{ item.total_item_price|floatformat:2 }}</span>
+                                <div class="d-flex align-items-center mt-1">
+                                    <form action="{% url 'update_cart' item.id %}" method="POST" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" name="action" value="minus" class="btn btn-sm btn-outline-secondary cart-qty-btn rounded-circle">-</button>
+                                    </form>
+                                    <span class="mx-2 fw-bold">{{ item.quantity }}</span>
+                                    <form action="{% url 'update_cart' item.id %}" method="POST" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" name="action" value="plus" class="btn btn-sm btn-outline-primary cart-qty-btn rounded-circle">+</button>
+                                    </form>
+                                    <form action="{% url 'update_cart' item.id %}" method="POST" class="d-inline ms-2">
+                                        {% csrf_token %}
+                                        <button type="submit" name="action" value="remove" class="btn btn-sm btn-light cart-qty-btn rounded-circle text-danger">x</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 opacity-50">
+                        <i class="fas fa-shopping-cart fa-4x mb-3"></i>
+                        <p>Cart is empty</p>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Checkout Summary -->
+                <div class="border-top pt-4 mt-auto">
+                    <form action="{% url 'checkout' %}" method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Select Customer</label>
+                            <select name="customer" class="form-select form-select-sm rounded-pill shadow-sm border-0">
+                                <option value="">Guest Customer</option>
+                                {% for customer in customers %}
+                                <option value="{{ customer.id }}">{{ customer.name }} ({{ customer.phone }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mb-1 small text-muted">
+                            <span>Subtotal:</span>
+                            <span>${{ subtotal|floatformat:2 }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1 small text-muted">
+                            <span>Tax (5%):</span>
+                            <span>${{ tax|floatformat:2 }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3 align-items-center">
+                            <span class="small text-muted">Discount:</span>
+                            <div class="input-group input-group-sm w-50">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="discount" class="form-control text-end border-0 bg-white" placeholder="0.00" step="0.01" min="0">
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between mb-4 mt-2">
+                            <h4 class="fw-bold mb-0">Total:</h4>
+                            <h4 class="fw-bold mb-0 text-primary">${{ total|floatformat:2 }}</h4>
+                        </div>
+
+                        <div class="row g-2 mb-4">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold">Amount Paid ($)</label>
+                                <input type="number" name="amount_paid" class="form-control form-control-sm rounded-pill shadow-sm border-0 bg-light" step="0.01" placeholder="0.00" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold">Payment Method</label>
+                                <select name="payment_method" class="form-select form-select-sm rounded-pill shadow-sm border-0 bg-primary text-white">
+                                    <option value="Cash">Cash</option>
+                                    <option value="Card">Credit/Debit Card</option>
+                                    <option value="Digital Wallet">Bkash / Nagad / Rocket</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 btn-lg rounded-pill shadow-lg mt-2" {% if not cart_items %}disabled{% endif %}>
+                            <i class="fas fa-check-circle me-2"></i> Complete Sale (F12)
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // F12 to trigger checkout
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'F12') {
+            event.preventDefault();
+            document.querySelector('button[type="submit"]').click();
+        }
+    });
+
+    // Handle barcode search auto-submit or focus
+    // (Actual barcode scanner implementation may require more logic)
+</script>
+{% endblock %}

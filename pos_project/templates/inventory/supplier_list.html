@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}SmartPOS - Supplier Management{% endblock %}
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-6">
+        <h3 class="fw-bold mb-0">Suppliers ({{ suppliers|length }})</h3>
+    </div>
+    <div class="col-6 text-end">
+        <a href="{% url 'supplier_add' %}" class="btn btn-primary rounded-pill shadow-sm px-4">
+            <i class="fas fa-truck-loading me-2"></i> Add Supplier
+        </a>
+    </div>
+</div>
+
+<div class="card p-3 shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="bg-light">
+                <tr class="small text-muted text-uppercase">
+                    <th class="px-3">ID</th>
+                    <th>Supplier Name</th>
+                    <th>Phone Number</th>
+                    <th>Date Registered</th>
+                    <th class="text-end px-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for supplier in suppliers %}
+                <tr>
+                    <td class="px-3 fw-bold">#{{ supplier.id }}</td>
+                    <td><div class="fw-bold text-primary">{{ supplier.name }}</div></td>
+                    <td><small class="text-muted"><i class="fas fa-phone-alt me-1"></i> {{ supplier.phone }}</small></td>
+                    <td><small class="text-muted">ID: {{ supplier.id }}</small></td>
+                    <td class="text-end px-3">
+                        <a href="{% url 'purchase_create' %}?supplier={{ supplier.id }}" class="btn btn-sm btn-outline-primary px-3 rounded-pill"><i class="fas fa-plus me-1"></i>New Stock</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-center py-5">No suppliers recorded. <a href="{% url 'supplier_add' %}">Add one now!</a></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

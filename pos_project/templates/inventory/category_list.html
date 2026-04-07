@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}SmartPOS - Inventory Management{% endblock %}
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-6">
+        <h3 class="fw-bold mb-0">Categories ({{ categories|length }})</h3>
+    </div>
+    <div class="col-6 text-end">
+        <a href="{% url 'category_add' %}" class="btn btn-primary rounded-pill shadow-sm px-4">
+            <i class="fas fa-plus me-2"></i> Add Category
+        </a>
+    </div>
+</div>
+
+<div class="card p-3 shadow-sm border-0">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="bg-light">
+                <tr class="small text-muted text-uppercase">
+                    <th class="px-3">ID</th>
+                    <th>Category Name</th>
+                    <th>Description</th>
+                    <th class="text-end px-3">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cat in categories %}
+                <tr>
+                    <td class="px-3 fw-bold">#{{ cat.id }}</td>
+                    <td><span class="badge bg-light text-dark px-3 py-2 rounded-pill fw-bold text-uppercase">{{ cat.name }}</span></td>
+                    <td class="text-muted small">{{ cat.description|default:"No description" }}</td>
+                    <td class="text-end px-3">
+                        <a href="{% url 'category_add' %}" class="btn btn-sm btn-outline-secondary px-3 rounded-pill">Edit</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-center py-5">No categories found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
