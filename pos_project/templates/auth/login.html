@@ -1,31 +1,53 @@
 {% extends 'base.html' %}
-{% block title %}SmartPOS - Login{% endblock %}
+{% block title %}SmartPOS - Sign In{% endblock %}
 {% block content %}
-<div class="row justify-content-center align-items-center" style="min-height: 80vh;">
-    <div class="col-md-4">
-        <div class="card p-4">
-            <h2 class="text-center mb-4">SmartPOS Login</h2>
+<div class="row min-vh-100 align-items-center justify-content-center py-5">
+    <div class="col-12 col-md-8 col-lg-5 col-xl-4 px-4">
+        <div class="text-center mb-5">
+            <div class="bg-primary text-white d-inline-flex align-items-center justify-content-center rounded-circle shadow mb-3" style="width: 72px; height: 72px;">
+                <i class="fas fa-shopping-bag fa-2x"></i>
+            </div>
+            <h2 class="fw-bold text-dark">Welcome Back</h2>
+            <p class="text-muted">SmartPOS | Secure Business Solutions</p>
+        </div>
+
+        <div class="card border-0 shadow-lg p-5 rounded-4 bg-white">
+            <h5 class="fw-bold mb-4 opacity-75">Sign In</h5>
             <form method="POST">
                 {% csrf_token %}
-                <div class="mb-3">
-                    <label for="username" class="form-label">Username</label>
-                    <input type="text" name="username" class="form-control" placeholder="Enter username" required>
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-muted">USERNAME</label>
+                    <div class="position-relative">
+                        <i class="fas fa-user position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                        <input type="text" name="username" class="form-control ps-5 border-0 bg-light rounded-3" placeholder="Enter username" required>
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" placeholder="Enter password" required>
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-muted">PASSWORD</label>
+                    <div class="position-relative">
+                        <i class="fas fa-lock position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                        <input type="password" name="password" class="form-control ps-5 border-0 bg-light rounded-3" placeholder="••••••••" required>
+                    </div>
                 </div>
-                <button type="submit" class="btn btn-primary w-100">Login</button>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="rememberMe">
+                        <label class="form-check-label small text-muted" for="rememberMe">Remember me</label>
+                    </div>
+                    <a href="#" class="small text-primary fw-bold text-decoration-none">Forgot?</a>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 btn-lg shadow-sm rounded-pill fw-bold" style="letter-spacing: 0.5px;">SIGN IN</button>
             </form>
-            <div class="text-center mt-3">
-                <p>New user? <a href="{% url 'register' %}">Create account</a></p>
-                <div class="alert alert-info py-1 px-2 mb-0 mt-2 small">
-                    Demo Credentials:<br>
-                    Admin: admin/admin123<br>
-                    (Must be created via admin interface first)
-                </div>
+            
+            <div class="text-center mt-5">
+                <p class="text-muted small">Need a new account? <a href="{% url 'register' %}" class="text-primary fw-bold text-decoration-none">Create One</a></p>
             </div>
+        </div>
+        
+        <div class="text-center mt-5 opacity-50 small">
+            &copy; 2026 SmartPOS Solutions. All rights reserved.
         </div>
     </div>
 </div>
 {% endblock %}
+
