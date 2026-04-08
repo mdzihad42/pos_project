@@ -40,6 +40,9 @@
             <a href="{% url 'pos' %}" class="nav-link {% if request.resolver_match.url_name == 'pos' %}active{% endif %}">
                 <i class="fas fa-desktop"></i> Point of Sale
             </a>
+            <a href="{% url 'held_sales_list' %}" class="nav-link {% if request.resolver_match.url_name == 'held_sales_list' %}active{% endif %}">
+                <i class="fas fa-hand-holding-heart"></i> Held Sales
+            </a>
             {% endif %}
 
             <div class="px-4 py-2 text-white-50 small mt-3 fw-bold text-uppercase" style="font-size: 0.65rem; letter-spacing: 1px;">Inventory</div>
@@ -74,6 +77,9 @@
             </a>
             <a href="{% url 'inventory_report' %}" class="nav-link {% if 'inventory' in request.path %}active{% endif %}">
                 <i class="fas fa-file-export"></i> Inventory Log
+            </a>
+            <a href="{% url 'system_settings' %}" class="nav-link {% if request.resolver_match.url_name == 'system_settings' %}active{% endif %}">
+                <i class="fas fa-cog"></i> System Settings
             </a>
             {% endif %}
         </nav>

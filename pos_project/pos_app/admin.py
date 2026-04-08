@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Product, Customer, Supplier, Purchase, Sale, SaleItem, StockMovement, Profile
+from .models import Category, Product, Customer, Supplier, Purchase, Sale, SaleItem, StockMovement, Profile, SystemSetting, Shift, Expense, SaleReturn
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):

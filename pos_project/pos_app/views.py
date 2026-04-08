@@ -12,6 +12,8 @@ from datetime import datetime, timedelta
 import json
 from decimal import Decimal
 import io
+from .models import Product, Category, Customer, Supplier, Purchase, Sale, SaleItem, StockMovement, Profile, Expense, ExpenseCategory, SaleReturn, SystemSetting, Shift, HoldSale
+from django.http import JsonResponse
 
 # ================= AUTHENTICATION =================
 
@@ -45,6 +47,13 @@ def register_view(request):
     else:
         form = UserCreationForm()
     return render(request, 'auth/register.html', {'form': form})
+
+# Helper to get system settings
+def get_settings():
+    settings = SystemSetting.objects.first()
+    if not settings:
+        settings = SystemSetting.objects.create(shop_name="SmartPOS")
+    return settings
 
 # ================= DASHBOARD =================
 
@@ -98,6 +107,7 @@ def dashboard(request):
         'chart_labels': json.dumps(labels),
         'chart_data': json.dumps(sales_data),
         'profit_chart_data': json.dumps(profit_data),
+        'settings': get_settings(),
     }
     return render(request, 'pos/dashboard.html', context)
 
@@ -239,12 +249,22 @@ def pos_view(request):
         subtotal += item_total
         cart_items.append({'id': product_id, 'total_item_price': item_total, **item_data})
     
-    tax_rate = 0.05 # 5% tax example
+    settings = get_settings()
+    tax_rate = float(settings.tax_percentage) / 100
     tax = subtotal * tax_rate
     total = subtotal + tax
     
     customers = Customer.objects.all()
     
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'cart_items': cart_items,
+            'subtotal': subtotal,
+            'tax': tax,
+            'total': total,
+            'currency': settings.currency_symbol
+        })
+
     context = {
         'products': products,
         'categories': categories,
@@ -253,15 +273,18 @@ def pos_view(request):
         'tax': tax,
         'total': total,
         'customers': customers,
+        'settings': settings,
     }
     return render(request, 'pos/pos.html', context)
 
 @login_required
 def add_to_cart(request, pk):
     product = get_object_or_404(Product, pk=pk)
+    is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
     
     # Backend Stock Check
     if product.stock <= 0:
+        if is_ajax: return JsonResponse({'status': 'error', 'message': f"Sorry, {product.name} is out of stock."})
         messages.error(request, f"Sorry, {product.name} is out of stock.")
         return redirect('pos')
 
@@ -270,6 +293,7 @@ def add_to_cart(request, pk):
     
     if p_id in cart:
         if cart[p_id]['quantity'] >= product.stock:
+            if is_ajax: return JsonResponse({'status': 'error', 'message': f"Stock limit reached for {product.name}."})
             messages.warning(request, f"Cannot add more of {product.name}. Stock limit reached.")
             return redirect('pos')
         cart[p_id]['quantity'] += 1
@@ -282,6 +306,10 @@ def add_to_cart(request, pk):
         }
     
     request.session['cart'] = cart
+    
+    if is_ajax:
+        return JsonResponse({'status': 'success', 'message': f"{product.name} added to cart."})
+        
     messages.success(request, f"{product.name} added to cart.")
     return redirect('pos')
 
@@ -306,6 +334,8 @@ def update_cart(request, pk):
             del cart[p_id]
             
     request.session['cart'] = cart
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'success'})
     return redirect('pos')
 
 @login_required
@@ -315,6 +345,8 @@ def remove_from_cart(request, pk):
     if p_id in cart:
         del cart[p_id]
     request.session['cart'] = cart
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'status': 'success'})
     return redirect('pos')
 
 @login_required
@@ -338,11 +370,14 @@ def checkout(request):
         amount_paid = float(request.POST.get('amount_paid', 0))
         
         customer = None
+        customer = None
         if customer_id:
             customer = Customer.objects.get(id=customer_id)
             
+        settings = get_settings()
         subtotal = sum(item['price'] * item['quantity'] for item in cart.values())
-        tax = subtotal * 0.05
+        tax_rate = float(settings.tax_percentage) / 100
+        tax = subtotal * tax_rate
         total = subtotal + tax - discount
         
         balance_due = total - amount_paid
@@ -512,3 +547,97 @@ def expense_add(request):
         categories = ExpenseCategory.objects.all()
         
     return render(request, 'pos/expense_form.html', {'categories': categories})
+
+@login_required
+def quick_add_customer(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        phone = request.POST.get('phone')
+        email = request.POST.get('email')
+        address = request.POST.get('address')
+        
+        if name and phone:
+            customer = Customer.objects.create(name=name, phone=phone, email=email, address=address)
+            return JsonResponse({'status': 'success', 'id': customer.id, 'name': customer.name, 'phone': customer.phone})
+        return JsonResponse({'status': 'error', 'message': 'Name and Phone are required.'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
+
+# ================= SHIFT MANAGEMENT =================
+
+@login_required
+def start_shift(request):
+    if request.method == 'POST':
+        balance = request.POST.get('opening_balance', 0)
+        Shift.objects.create(user=request.user, opening_balance=balance)
+        messages.success(request, "Shift started successfully.")
+        return redirect('dashboard')
+    return render(request, 'pos/start_shift.html')
+
+@login_required
+def end_shift(request, pk):
+    shift = get_object_or_404(Shift, pk=pk)
+    if request.method == 'POST':
+        shift.closing_balance = request.POST.get('closing_balance')
+        shift.end_time = timezone.now()
+        shift.status = 'Closed'
+        shift.save()
+        messages.success(request, "Shift ended successfully.")
+        return redirect('dashboard')
+    return render(request, 'pos/end_shift.html', {'shift': shift})
+
+# ================= HOLD / RESUME SALE =================
+
+@login_required
+def hold_sale(request):
+    if request.method == 'POST':
+        cart = request.session.get('cart', {})
+        if not cart:
+            return JsonResponse({'status': 'error', 'message': 'Cart is empty.'})
+            
+        customer_id = request.POST.get('customer')
+        customer = None
+        if customer_id:
+            customer = Customer.objects.get(id=customer_id)
+            
+        HoldSale.objects.create(
+            user=request.user,
+            customer=customer,
+            cart_data=json.dumps(cart),
+            note=request.POST.get('note', '')
+        )
+        request.session['cart'] = {}
+        return JsonResponse({'status': 'success', 'message': 'Sale put on hold.'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
+
+@login_required
+def resume_sale(request, pk):
+    held_sale = get_object_or_404(HoldSale, pk=pk)
+    request.session['cart'] = json.loads(held_sale.cart_data)
+    held_sale.delete()
+    messages.success(request, "Sale resumed.")
+    return redirect('pos')
+
+@login_required
+def held_sales_list(request):
+    held_sales = HoldSale.objects.filter(user=request.user)
+    return render(request, 'pos/held_sales.html', {'held_sales': held_sales})
+
+@login_required
+def system_settings_view(request):
+    if request.user.profile.role != 'Admin':
+        messages.error(request, "Only admins can access settings.")
+        return redirect('dashboard')
+        
+    settings = get_settings()
+    if request.method == 'POST':
+        settings.shop_name = request.POST.get('shop_name')
+        settings.tax_percentage = request.POST.get('tax_percentage')
+        settings.currency_symbol = request.POST.get('currency_symbol')
+        settings.low_stock_threshold = request.POST.get('low_stock_threshold')
+        if request.FILES.get('shop_logo'):
+            settings.shop_logo = request.FILES.get('shop_logo')
+        settings.save()
+        messages.success(request, "Settings updated successfully!")
+        return redirect('system_settings')
+        
+    return render(request, 'pos/settings.html', {'settings': settings})

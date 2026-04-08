@@ -18,6 +18,25 @@ class Profile(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.role}"
 
+# System Settings Model
+class SystemSetting(models.Model):
+    shop_name = models.CharField(max_length=255, default="SmartPOS")
+    shop_logo = models.ImageField(upload_to='settings/', blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    tax_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=5.00)
+    currency_symbol = models.CharField(max_length=10, default="$")
+    currency_name = models.CharField(max_length=20, default="USD")
+    low_stock_threshold = models.IntegerField(default=10)
+
+    def __str__(self):
+        return self.shop_name
+
+    class Meta:
+        verbose_name = "System Setting"
+        verbose_name_plural = "System Settings"
+
 # Signal to create or update profile when User is created
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
@@ -44,6 +63,12 @@ class Product(models.Model):
     stock = models.IntegerField(default=0)
     barcode = models.CharField(max_length=100, unique=True, blank=True, null=True)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
+    
+    # Advanced Inventory Fields
+    batch_number = models.CharField(max_length=100, blank=True, null=True)
+    expiry_date = models.DateField(blank=True, null=True)
+    min_stock_level = models.IntegerField(default=10)
+    
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -204,3 +229,25 @@ def update_stock_on_return(sender, instance, created, **kwargs):
             quantity=instance.sale_item.quantity,
             reference_id=f"Return for Sale #{instance.sale_item.sale.id}"
         )
+
+# Shift/Session Management
+class Shift(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    start_time = models.DateTimeField(auto_now_add=True)
+    end_time = models.DateTimeField(null=True, blank=True)
+    opening_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    closing_balance = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    status = models.CharField(max_length=10, choices=[('Open', 'Open'), ('Closed', 'Closed')], default='Open')
+
+    def __str__(self):
+        return f"Shift by {self.user.username} ({self.start_time.strftime('%Y-%m-%d %H:%M')})"
+
+class HoldSale(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True)
+    cart_data = models.TextField() # JSON string of cart
+    hold_at = models.DateTimeField(auto_now_add=True)
+    note = models.CharField(max_length=255, blank=True, null=True)
+
+    def __str__(self):
+        return f"Hold by {self.user.username} at {self.hold_at}"

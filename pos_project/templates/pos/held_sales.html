@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Held Sales - SmartPOS{% endblock %}
+{% block page_title %}Held Sales{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h5 class="fw-bold mb-0">List of Held Sales</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Customer</th>
+                        <th>Note</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for held in held_sales %}
+                    <tr>
+                        <td>{{ held.hold_at|date:"M d, Y h:i A" }}</td>
+                        <td>{{ held.customer.name|default:"Walking Customer" }}</td>
+                        <td>{{ held.note|default:"-" }}</td>
+                        <td>
+                            <a href="{% url 'resume_sale' held.id %}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-play me-1"></i> Resume
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5">
+                            <p class="text-muted mb-0">No held sales found.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

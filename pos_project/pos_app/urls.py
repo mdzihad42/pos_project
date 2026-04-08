@@ -46,4 +46,11 @@ urlpatterns = [
     path('customers/pay-due/<int:pk>/', views.pay_due, name='pay_due'),
     path('expenses/', views.expense_list, name='expense_list'),
     path('expenses/add/', views.expense_add, name='expense_add'),
+    path('pos/quick-add-customer/', views.quick_add_customer, name='quick_add_customer'),
+    path('shift/start/', views.start_shift, name='start_shift'),
+    path('shift/end/<int:pk>/', views.end_shift, name='end_shift'),
+    path('pos/hold/', views.hold_sale, name='hold_sale'),
+    path('pos/resume/<int:pk>/', views.resume_sale, name='resume_sale'),
+    path('pos/held-sales/', views.held_sales_list, name='held_sales_list'),
+    path('settings/', views.system_settings_view, name='system_settings'),
 ]

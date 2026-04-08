@@ -133,11 +133,11 @@
                     <div class="card-body p-3">
                         <h6 class="fw-bold text-truncate mb-1" title="{{ product.name }}">{{ product.name }}</h6>
                         <div class="d-flex justify-content-between align-items-center mt-2">
-                            <span class="fw-bold text-primary">${{ product.price }}</span>
+                            <span class="fw-bold text-primary">{{ settings.currency_symbol }}{{ product.price }}</span>
                             {% if product.stock > 0 %}
-                                <a href="{% url 'add_to_cart' product.id %}" class="btn btn-sm btn-primary btn-pill">
+                                <button onclick="addToCart({{ product.id }})" class="btn btn-sm btn-primary btn-pill">
                                     <i class="fas fa-plus"></i>
-                                </a>
+                                </button>
                             {% else %}
                                 <button class="btn btn-sm btn-light btn-pill disabled"><i class="fas fa-times"></i></button>
                             {% endif %}
@@ -160,29 +160,23 @@
         <div class="cart-drawer d-flex flex-column">
             <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
                 <h5 class="fw-bold mb-0">Current Order</h5>
-                <span class="badge bg-primary-subtle text-primary btn-pill px-3">{{ cart_items|length }} items</span>
+                <span class="badge bg-primary-subtle text-primary btn-pill px-3" id="cart-count">{{ cart_items|length }} items</span>
             </div>
 
-            <div class="cart-items-list">
+            <div class="cart-items-list" id="cart-items">
                 {% for item in cart_items %}
                 <div class="cart-item">
                     <img src="{{ item.image }}" class="rounded me-3 d-none d-xl-block" width="45" height="45" style="object-fit: cover;">
                     <div class="flex-grow-1 min-width-0">
                         <h6 class="mb-0 text-truncate fw-bold" style="font-size: 0.9rem;">{{ item.name }}</h6>
-                        <small class="text-muted">${{ item.price }} / unit</small>
+                        <small class="text-muted">{{ settings.currency_symbol }}{{ item.price }} / unit</small>
                     </div>
                     <div class="text-end">
-                        <div class="fw-bold mb-1">${{ item.total_item_price|floatformat:2 }}</div>
+                        <div class="fw-bold mb-1">{{ settings.currency_symbol }}<span class="item-total-price">{{ item.total_item_price|floatformat:2 }}</span></div>
                         <div class="d-flex align-items-center justify-content-end gap-1">
-                            <form action="{% url 'update_cart' item.id %}" method="POST" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" name="action" value="minus" class="btn btn-xs btn-light rounded-circle shadow-sm" style="width: 24px; height: 24px; padding: 0;">-</button>
-                            </form>
+                            <button onclick="updateCart({{ item.id }}, 'minus')" class="btn btn-xs btn-light rounded-circle shadow-sm" style="width: 24px; height: 24px; padding: 0;">-</button>
                             <span class="mx-2 small fw-bold">{{ item.quantity }}</span>
-                            <form action="{% url 'update_cart' item.id %}" method="POST" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" name="action" value="plus" class="btn btn-xs btn-primary rounded-circle shadow-sm" style="width: 24px; height: 24px; padding: 0;">+</button>
-                            </form>
+                            <button onclick="updateCart({{ item.id }}, 'plus')" class="btn btn-xs btn-primary rounded-circle shadow-sm" style="width: 24px; height: 24px; padding: 0;">+</button>
                         </div>
                     </div>
                 </div>
@@ -199,7 +193,12 @@
                     {% csrf_token %}
                     
                     <div class="mb-3">
-                        <label class="form-label small fw-bold text-muted">Customer</label>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label small fw-bold text-muted mb-0">Customer</label>
+                            <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2" style="font-size: 0.7rem;" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
+                                <i class="fas fa-plus me-1"></i> New
+                            </button>
+                        </div>
                         <select name="customer" class="form-select border-0 shadow-sm rounded-3">
                             <option value="">Walking Customer</option>
                             {% for customer in customers %}
@@ -210,22 +209,22 @@
 
                     <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted small">Subtotal</span>
-                        <span class="fw-bold">${{ subtotal|floatformat:2 }}</span>
+                        <span class="fw-bold">{{ settings.currency_symbol }}<span id="subtotal">{{ subtotal|floatformat:2 }}</span></span>
                     </div>
                     <div class="d-flex justify-content-between mb-2">
-                        <span class="text-muted small">Tax (5%)</span>
-                        <span class="fw-bold">${{ tax|floatformat:2 }}</span>
+                        <span class="text-muted small">Tax ({{ settings.tax_percentage }}%)</span>
+                        <span class="fw-bold">{{ settings.currency_symbol }}<span id="tax">{{ tax|floatformat:2 }}</span></span>
                     </div>
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <span class="text-muted small">Discount</span>
                         <div class="input-group input-group-sm w-25">
-                            <input type="number" name="discount" class="form-control text-end border-0 shadow-sm" placeholder="0" step="0.01" min="0">
+                            <input type="number" name="discount" id="discount-input" class="form-control text-end border-0 shadow-sm" placeholder="0" step="0.01" min="0">
                         </div>
                     </div>
 
                     <div class="d-flex justify-content-between mb-4 mt-3">
                         <h4 class="fw-bold mb-0">Total</h4>
-                        <h4 class="fw-bold mb-0 text-primary">${{ total|floatformat:2 }}</h4>
+                        <h4 class="fw-bold mb-0 text-primary">{{ settings.currency_symbol }}<span id="total">{{ total|floatformat:2 }}</span></h4>
                     </div>
 
                     <div class="row g-2 mb-4">
@@ -243,9 +242,18 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 btn-lg shadow mt-2" {% if not cart_items %}disabled{% endif %}>
-                        <i class="fas fa-check-circle me-2"></i> COMPLETE SALE
-                    </button>
+                    <div class="row g-2 mt-2">
+                        <div class="col-4">
+                            <button type="button" onclick="holdSale()" class="btn btn-outline-warning w-100 btn-lg shadow-sm" {% if not cart_items %}disabled{% endif %}>
+                                <i class="fas fa-pause"></i>
+                            </button>
+                        </div>
+                        <div class="col-8">
+                            <button type="submit" class="btn btn-primary w-100 btn-lg shadow" {% if not cart_items %}disabled{% endif %}>
+                                <i class="fas fa-check-circle me-2"></i> COMPLETE
+                            </button>
+                        </div>
+                    </div>
                 </form>
             </div>
         </div>
@@ -254,7 +262,131 @@
 {% endblock %}
 
 {% block extra_js %}
+{% include 'pos/partials/customer_modal.html' %}
+
 <script>
+    const currencySymbol = "{{ settings.currency_symbol }}";
+
+    function updateCartUI() {
+        fetch("{% url 'pos' %}", {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            const cartList = document.getElementById('cart-items');
+            const cartCount = document.getElementById('cart-count');
+            
+            cartCount.innerText = `${data.cart_items.length} items`;
+            
+            if (data.cart_items.length === 0) {
+                cartList.innerHTML = `
+                    <div class="h-100 d-flex flex-column align-items-center justify-content-center text-muted opacity-50">
+                        <i class="fas fa-shopping-basket fa-3x mb-3"></i>
+                        <p>Empty Cart</p>
+                    </div>`;
+            } else {
+                cartList.innerHTML = data.cart_items.map(item => `
+                    <div class="cart-item">
+                        <img src="${item.image}" class="rounded me-3 d-none d-xl-block" width="45" height="45" style="object-fit: cover;">
+                        <div class="flex-grow-1 min-width-0">
+                            <h6 class="mb-0 text-truncate fw-bold" style="font-size: 0.9rem;">${item.name}</h6>
+                            <small class="text-muted">${data.currency}${item.price} / unit</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold mb-1">${data.currency}${parseFloat(item.total_item_price).toFixed(2)}</div>
+                            <div class="d-flex align-items-center justify-content-end gap-1">
+                                <button onclick="updateCart(${item.id}, 'minus')" class="btn btn-xs btn-light rounded-circle shadow-sm" style="width: 24px; height: 24px; padding: 0;">-</button>
+                                <span class="mx-2 small fw-bold">${item.quantity}</span>
+                                <button onclick="updateCart(${item.id}, 'plus')" class="btn btn-xs btn-primary rounded-circle shadow-sm" style="width: 24px; height: 24px; padding: 0;">+</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            document.getElementById('subtotal').innerText = parseFloat(data.subtotal).toFixed(2);
+            document.getElementById('tax').innerText = parseFloat(data.tax).toFixed(2);
+            document.getElementById('total').innerText = parseFloat(data.total).toFixed(2);
+
+            // Enable/Disable buttons based on cart data
+            const completeBtn = document.querySelector('button[type="submit"].btn-primary');
+            const holdBtn = document.querySelector('button.btn-outline-warning');
+            
+            if (data.cart_items.length > 0) {
+                completeBtn.removeAttribute('disabled');
+                holdBtn.removeAttribute('disabled');
+            } else {
+                completeBtn.setAttribute('disabled', 'true');
+                holdBtn.setAttribute('disabled', 'true');
+            }
+        });
+    }
+
+    function addToCart(productId) {
+        fetch(`/pos/add-to-cart/${productId}/`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                updateCartUI();
+            } else {
+                alert(data.message);
+            }
+        });
+    }
+
+    function updateCart(productId, action) {
+        const formData = new FormData();
+        formData.append('action', action);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch(`/pos/cart/update/${productId}/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                updateCartUI();
+            }
+        });
+    }
+
+    function holdSale() {
+        const customerId = document.querySelector('select[name="customer"]').value;
+        const note = prompt("Add a note for this held sale (optional):");
+        
+        const formData = new FormData();
+        formData.append('customer', customerId);
+        formData.append('note', note || '');
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch("{% url 'hold_sale' %}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                updateCartUI();
+                alert(data.message);
+            } else {
+                alert(data.message);
+            }
+        });
+    }
+
     // Autofocus search on page load
     window.onload = () => {
         document.querySelector('input[name="search"]').focus();
@@ -266,6 +398,17 @@
             e.preventDefault();
             document.querySelector('button[type="submit"]').click();
         }
+    });
+
+    // Discount live update
+    document.getElementById('discount-input').addEventListener('input', function() {
+        // This would ideally be handled on the server side for precision, 
+        // but can be done here for instant UI feedback
+        const subtotal = parseFloat(document.getElementById('subtotal').innerText);
+        const tax = parseFloat(document.getElementById('tax').innerText);
+        const discount = parseFloat(this.value || 0);
+        const newTotal = subtotal + tax - discount;
+        document.getElementById('total').innerText = newTotal.toFixed(2);
     });
 </script>
 {% endblock %}
