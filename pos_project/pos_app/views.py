@@ -12,8 +12,7 @@ from datetime import datetime, timedelta
 import json
 from decimal import Decimal
 import io
-from .models import Product, Category, Customer, Supplier, Purchase, Sale, SaleItem, StockMovement, Profile, Expense, ExpenseCategory, SaleReturn, SystemSetting, Shift, HoldSale
-from django.http import JsonResponse
+
 
 # ================= AUTHENTICATION =================
 
